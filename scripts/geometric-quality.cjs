@@ -90,6 +90,7 @@ async function main() {
     legacy.layoutOptions['elk.algorithm']=oldAlgorithm;
     if(oldAlgorithm==='radial') legacy.layoutOptions['elk.radial.centerOnRoot']='true';
     const before=await baseline.layout(legacy);
+    metrics.containment(before); // A comparison is invalid if the baseline omitted any edge routes.
     const after=await elk.layout(clone(input),{logging:true,measureExecutionTime:true});
     metrics.containment(after); metrics.clearance(after,24);
     comparisons.push({id:input.id,oldAlgorithm,before,after,beforeCost:cost(before),afterCost:cost(after)});
