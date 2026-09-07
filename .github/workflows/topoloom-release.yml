@@ -1,0 +1,84 @@
+name: Topoloom reproducible release build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+env:
+  ELKJS_UPSTREAM_SHA: ff5771d7165445c42c408bb8a090c8035272218c
+  ELK_JAVA_SHA: 323312916048544e4e594eab3303cdb0d01e2929
+  PACKAGE_VERSION: 0.12.0-topoloom.1
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out the Relia1 elkjs source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          path: elkjs
+
+      - name: Check out the pinned Relia1 ELK Java source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: Relia1-platform/elk
+          ref: 323312916048544e4e594eab3303cdb0d01e2929
+          path: elk
+
+      - name: Verify source revisions
+        shell: bash
+        run: |
+          test "$(git -C elkjs merge-base HEAD "$ELKJS_UPSTREAM_SHA")" = "$ELKJS_UPSTREAM_SHA"
+          test "$(git -C elk rev-parse HEAD)" = "$ELK_JAVA_SHA"
+          test "$(node -p "require('./elkjs/package.json').version")" = "$PACKAGE_VERSION"
+
+      - name: Set up Java 17
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: elkjs/package-lock.json
+
+      - name: Install, build, and test
+        working-directory: elkjs
+        run: |
+          npm ci
+          npm run build
+          npm test
+
+      - name: Assemble package, SBOM, licenses, and checksums
+        working-directory: elkjs
+        shell: bash
+        run: |
+          mkdir -p release
+          npm pack --pack-destination release
+          npm sbom --sbom-format cyclonedx > release/relia1-platform-elkjs-${PACKAGE_VERSION}.cdx.json
+          cp LICENSE.md release/LICENSE.md
+          cp TOPOLOOM_PROVENANCE.md release/TOPOLOOM_PROVENANCE.md
+          cp TOPOLOOM_RELEASE_NOTES.md release/TOPOLOOM_RELEASE_NOTES.md
+          cd release
+          sha256sum *.tgz *.json LICENSE.md TOPOLOOM_PROVENANCE.md TOPOLOOM_RELEASE_NOTES.md > SHA256SUMS
+
+      - name: Attest package provenance
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
+        with:
+          subject-path: elkjs/release/*.tgz
+
+      - name: Upload release candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: relia1-platform-elkjs-${{ env.PACKAGE_VERSION }}
+          path: elkjs/release/*
+          if-no-files-found: error
+          retention-days: 30
