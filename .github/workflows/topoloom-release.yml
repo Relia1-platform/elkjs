@@ -1,6 +1,9 @@
 name: Topoloom reproducible release build
 
 on:
+  push:
+    tags:
+      - "v*-topoloom.*"
   workflow_dispatch:
 
 permissions:
