@@ -18,6 +18,7 @@ export default class ELK {
     defaultLayoutOptions = {},
     algorithms = [
         'layered',
+        'geometric',
         'stress',
         'mrtree',
         'radial',
