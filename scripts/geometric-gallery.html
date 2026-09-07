@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ELK geometric layout comparison</title>
+<style>
+  *{box-sizing:border-box}body{margin:0;background:#f7f8fa;color:#1e293b;font:15px system-ui,sans-serif}
+  main{max-width:1280px;margin:40px auto;padding:0 28px}h1{font-size:28px;margin:0 0 10px;font-weight:650}
+  p{color:#64748b;line-height:1.6}select{font:inherit;padding:10px 14px;border:1px solid #b8c3d2;border-radius:6px;background:white}
+  .toolbar{display:flex;gap:16px;align-items:center;margin:28px 0}.pair{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+  h2{font-size:16px;font-weight:600}.metrics{font:13px ui-monospace,monospace;color:#64748b;min-height:38px}
+  svg{width:100%;height:600px;background:white;border-radius:8px;border:1px solid #e2e8f0}
+  .node{fill:#e8effb;stroke:#436ba5;stroke-width:1.2}.edge{fill:none;stroke:#8293a9;stroke-width:1.2;stroke-linejoin:round}
+  .label{font:11px system-ui;fill:#233c5e;text-anchor:middle;dominant-baseline:middle}.bounds{fill:none;stroke:#cbd5e1;stroke-dasharray:4 4}
+  .group{fill:#f3f6fb;stroke:#a2b1c8;stroke-width:1}.edge-label{fill:white;stroke:#dce3ed;stroke-width:.6}.port{fill:#436ba5}
+  @media(max-width:720px){.pair{grid-template-columns:1fr}svg{height:430px}main{margin:24px auto;padding:0 18px}}
+</style>
+<main>
+  <h1>Geometry in auto-layout</h1>
+  <p>Identical input and node dimensions. Both diagrams use the same scale within each comparison.</p>
+  <div class="toolbar"><label for="fixture">Diagram</label><select id="fixture"></select><span id="count"></span></div>
+  <div class="pair">
+    <section><h2 id="before-title">Before</h2><div class="metrics" id="before-cost"></div><svg id="before" role="img" aria-label="Previous layout"></svg></section>
+    <section><h2>Geometric</h2><div class="metrics" id="after-cost"></div><svg id="after" role="img" aria-label="Geometric layout"></svg></section>
+  </div>
+</main>
+<script>
+const comparisons=/* COMPARISON_DATA */ [];
+const ns='http://www.w3.org/2000/svg',select=document.getElementById('fixture');
+function element(type,attrs){const el=document.createElementNS(ns,type);for(const [key,value]of Object.entries(attrs))el.setAttribute(key,value);return el;}
+function draw(id,graph,width,height){
+ const svg=document.getElementById(id);svg.replaceChildren();svg.setAttribute('viewBox',`-12 -12 ${width+24} ${height+24}`);
+ svg.append(element('rect',{x:0,y:0,width:graph.width,height:graph.height,class:'bounds'}));
+ const scopes=[{graph,x:0,y:0}],frames=new Map([[graph.id,{x:0,y:0}]]);
+ for(let i=0;i<scopes.length;i++){
+  const frame=scopes[i];
+  for(const node of frame.graph.children||[]){
+   const x=frame.x+node.x,y=frame.y+node.y,group=(node.children||[]).length>0;
+   frames.set(node.id,{x,y});
+   const rect=element('rect',{x,y,width:node.width,height:node.height,rx:3,class:group?'group':'node'});
+   const title=element('title',{});title.textContent=node.id;rect.append(title);svg.append(rect);
+   const text=element('text',{x:x+node.width/2,y:group?y+10:y+node.height/2,class:'label'});text.textContent=node.id;svg.append(text);
+   for(const port of node.ports||[])svg.append(element('circle',{cx:x+port.x+port.width/2,cy:y+port.y+port.height/2,r:2,class:'port'}));
+   if(group)scopes.push({graph:node,x,y});
+  }
+ }
+ for(const frame of scopes)for(const edge of frame.graph.edges||[]){
+  const origin=frames.get(edge.container)||frame;
+  for(const section of edge.sections||[]){
+   const points=[section.startPoint,...(section.bendPoints||[]),section.endPoint];
+   svg.append(element('polyline',{points:points.map(p=>`${p.x+origin.x},${p.y+origin.y}`).join(' '),class:'edge'}));
+  }
+  for(const label of edge.labels||[]){
+   const x=origin.x+label.x,y=origin.y+label.y;
+   svg.append(element('rect',{x,y,width:label.width,height:label.height,rx:2,class:'edge-label'}));
+   const text=element('text',{x:x+label.width/2,y:y+label.height/2,class:'label'});text.textContent=label.text||label.id;svg.append(text);
+  }
+ }
+}
+function update(){
+ const row=comparisons[Number(select.value)],width=Math.max(row.before.width,row.after.width),height=Math.max(row.before.height,row.after.height);
+ draw('before',row.before,width,height);draw('after',row.after,width,height);
+ document.getElementById('before-title').textContent=`Before · ${row.oldAlgorithm}`;
+ document.getElementById('count').textContent=`${row.afterCost.nodeCount} nodes · ${row.afterCost.edgeCount} edges`;
+ for(const side of ['before','after']){const cost=row[`${side}Cost`];document.getElementById(`${side}-cost`).textContent=`Area ${Math.round(cost.area).toLocaleString()} · Edge length ${Math.round(cost.edgeLength).toLocaleString()} · Bends ${cost.bends}`;}
+}
+comparisons.forEach((row,i)=>{const option=document.createElement('option');option.value=i;option.textContent=row.id.replaceAll('-',' ');select.append(option);});
+select.addEventListener('change',update);if(comparisons.length)update();
+</script>
+</html>

@@ -32,6 +32,7 @@ import org.eclipse.elk.alg.common.compaction.options.*;
 // FIXME: DisCo breaks Github Actions for unknown reasons, see https://github.com/kieler/elkjs/issues/291
 //import org.eclipse.elk.alg.disco.options.*;
 import org.eclipse.elk.alg.layered.options.*;
+import org.eclipse.elk.alg.geometric.options.*;
 import org.eclipse.elk.alg.force.options.*;
 import org.eclipse.elk.alg.mrtree.options.*;
 import org.eclipse.elk.alg.radial.options.*;
@@ -140,7 +141,10 @@ public class ElkJs implements EntryPoint {
         JSONArray arr = new JSONArray(arrayObj);
         for (int i = 0; i < arr.size(); ++i) {
             String alg = arr.get(i).isString().stringValue();
-            if (alg.equals("layered")) {
+            if (alg.equals("geometric")) {
+                SERVICE.registerLayoutMetaDataProviders(new LayeredMetaDataProvider(),
+                        new MrTreeMetaDataProvider(), new RadialMetaDataProvider(), new GeometricMetaDataProvider());
+            } else if (alg.equals("layered")) {
                 SERVICE.registerLayoutMetaDataProviders(new LayeredMetaDataProvider());
             } else if (alg.equals("force")) {
                 SERVICE.registerLayoutMetaDataProviders(new ForceMetaDataProvider());
@@ -221,7 +225,7 @@ public class ElkJs implements EntryPoint {
                                    final boolean recordExecutionTime) {
 
         // Set the name
-        final JSONString jsonTaskName = new JSONString(currentPM.getTaskName());
+        final JSONString jsonTaskName = new JSONString(currentPM.getTaskName() == null ? "" : currentPM.getTaskName());
         logObject.put("name", jsonTaskName);
 
         // Collect the logs of the current progress monitor
