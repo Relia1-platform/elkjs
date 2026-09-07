@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master 
+      - 'topoloom/**'
   repository_dispatch:
   schedule:
     - cron:  '0 3 * * *'
@@ -16,12 +17,10 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    continue-on-error: true
-
     strategy:
       fail-fast: false
       matrix:
-        node-version: [ 14.x, 24.x ]
+        node-version: [ 24.x, 26.x ]
         java-version: [ 17 ] 
 
     steps:
@@ -30,8 +29,8 @@ jobs:
         path: elkjs
     - uses: actions/checkout@v4
       with:
-        repository: eclipse/elk
-        ref: master
+        repository: Relia1-platform/elk
+        ref: 3fb134f5f09e65ca3364c1670c91dc8aee37fe9a
         path: elk
     - name: Set up JDK ${{ matrix.java-version }}
       uses: actions/setup-java@v4
@@ -57,11 +56,11 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-    - name: npm install, build, and test
+    - name: npm ci, build, and test
       run: |
         cd elkjs
-        npm install
-        npm run build --if-present
+        npm ci
+        npm run build
         npm test
       env:
         CI: true

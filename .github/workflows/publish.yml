@@ -11,6 +11,8 @@ permissions:
 
 jobs:
     publish:
+        # Relia1 Topoloom builds are distributed as attested GitHub Release tarballs.
+        if: ${{ !contains(github.ref_name, '-topoloom.') }}
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4

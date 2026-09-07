@@ -13,8 +13,8 @@ permissions:
 
 env:
   ELKJS_UPSTREAM_SHA: ff5771d7165445c42c408bb8a090c8035272218c
-  ELK_JAVA_SHA: 323312916048544e4e594eab3303cdb0d01e2929
-  PACKAGE_VERSION: 0.12.0-topoloom.1
+  ELK_JAVA_SHA: 3fb134f5f09e65ca3364c1670c91dc8aee37fe9a
+  PACKAGE_VERSION: 0.13.0-topoloom.1
 
 jobs:
   build:
@@ -30,7 +30,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           repository: Relia1-platform/elk
-          ref: 323312916048544e4e594eab3303cdb0d01e2929
+          ref: ${{ env.ELK_JAVA_SHA }}
           path: elk
 
       - name: Verify source revisions
@@ -39,6 +39,9 @@ jobs:
           test "$(git -C elkjs merge-base HEAD "$ELKJS_UPSTREAM_SHA")" = "$ELKJS_UPSTREAM_SHA"
           test "$(git -C elk rev-parse HEAD)" = "$ELK_JAVA_SHA"
           test "$(node -p "require('./elkjs/package.json').version")" = "$PACKAGE_VERSION"
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            test "$GITHUB_REF_NAME" = "v$PACKAGE_VERSION"
+          fi
 
       - name: Set up Java 17
         uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
@@ -71,8 +74,10 @@ jobs:
           cp LICENSE.md release/LICENSE.md
           cp TOPOLOOM_PROVENANCE.md release/TOPOLOOM_PROVENANCE.md
           cp TOPOLOOM_RELEASE_NOTES.md release/TOPOLOOM_RELEASE_NOTES.md
+          cp docs/geometric-layout.md release/geometric-layout.md
+          ELKJS_SHA=$(git rev-parse HEAD) node -e 'console.log(JSON.stringify({elkjs: process.env.ELKJS_SHA, elk: process.env.ELK_JAVA_SHA, version: process.env.PACKAGE_VERSION, run: process.env.GITHUB_RUN_ID}, null, 2))' > release/source-revisions.json
           cd release
-          sha256sum *.tgz *.json LICENSE.md TOPOLOOM_PROVENANCE.md TOPOLOOM_RELEASE_NOTES.md > SHA256SUMS
+          sha256sum *.tgz *.json *.md > SHA256SUMS
 
       - name: Attest package provenance
         uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0

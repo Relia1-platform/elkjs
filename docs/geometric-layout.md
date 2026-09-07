@@ -3,7 +3,7 @@
 `org.eclipse.elk.geometric` balances trees, preserves concentric radial levels, places rings at equal angles, and composes these structures in mixed graphs. Placement, topology analysis, routing, and bounds normalization run in Java and are compiled into the elkjs workers. The existing default remains `layered`.
 
 ```js
-const ELK = require('elkjs/lib/elk.bundled.js');
+const ELK = require('@relia1-platform/elkjs/lib/elk.bundled.js');
 const elk = new ELK({ algorithms: ['geometric'] });
 
 graph.layoutOptions = {
@@ -64,7 +64,7 @@ Keep the matching ELK checkout beside elkjs as `../elk`. Build Java with JDK 17 
 ```sh
 npm ci
 npm run build
-npm test -- --exit
+npm test
 node scripts/check-geometric-parity.cjs
 node scripts/geometric-quality.cjs artifacts/geometric /path/to/baseline-elk.bundled.js
 ```
