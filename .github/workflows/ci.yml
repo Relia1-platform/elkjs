@@ -30,7 +30,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         repository: Relia1-platform/elk
-        ref: 3fb134f5f09e65ca3364c1670c91dc8aee37fe9a
+        ref: ad788fa28b91e3f6a8eba7cd52fc253f4f6f1797
         path: elk
     - name: Set up JDK ${{ matrix.java-version }}
       uses: actions/setup-java@v4

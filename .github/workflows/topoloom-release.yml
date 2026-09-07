@@ -13,8 +13,8 @@ permissions:
 
 env:
   ELKJS_UPSTREAM_SHA: cc8008397885250fb7004b3e42c975c5535ac443
-  ELK_JAVA_SHA: 3fb134f5f09e65ca3364c1670c91dc8aee37fe9a
-  PACKAGE_VERSION: 0.13.0-topoloom.2
+  ELK_JAVA_SHA: ad788fa28b91e3f6a8eba7cd52fc253f4f6f1797
+  PACKAGE_VERSION: 0.13.0-topoloom.3
 
 jobs:
   build:
