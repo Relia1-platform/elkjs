@@ -12,9 +12,9 @@ permissions:
   attestations: write
 
 env:
-  ELKJS_UPSTREAM_SHA: ff5771d7165445c42c408bb8a090c8035272218c
+  ELKJS_UPSTREAM_SHA: cc8008397885250fb7004b3e42c975c5535ac443
   ELK_JAVA_SHA: 3fb134f5f09e65ca3364c1670c91dc8aee37fe9a
-  PACKAGE_VERSION: 0.13.0-topoloom.1
+  PACKAGE_VERSION: 0.13.0-topoloom.2
 
 jobs:
   build:

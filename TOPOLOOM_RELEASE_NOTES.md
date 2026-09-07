@@ -1,4 +1,10 @@
-# @relia1-platform/elkjs 0.13.0-topoloom.1
+# @relia1-platform/elkjs 0.13.0-topoloom.2
+
+Built from Relia1 master after merging the geometric release with upstream
+development. Compared with `0.13.0-topoloom.1`, this includes the restored DisCo
+provider, the FakeWorker CommonJS export fix, updated dependencies, and rebuilt
+workers using Gradle 8.10 and GWT 2.13.0. The ELK Java source pin is unchanged.
+The previous release tag and assets remain unchanged.
 
 Adds opt-in geometric layout for balanced trees, concentric radial diagrams,
 equal-angle rings, and mixed graphs. `AUTO` recognizes and composes these forms;
@@ -9,7 +15,7 @@ Install from the versioned GitHub Release asset (the distribution channel used
 by Topoloom):
 
 ```sh
-pnpm add '@relia1-platform/elkjs@https://github.com/Relia1-platform/elkjs/releases/download/v0.13.0-topoloom.1/relia1-platform-elkjs-0.13.0-topoloom.1.tgz'
+pnpm add '@relia1-platform/elkjs@https://github.com/Relia1-platform/elkjs/releases/download/v0.13.0-topoloom.2/relia1-platform-elkjs-0.13.0-topoloom.2.tgz'
 ```
 
 ```js
