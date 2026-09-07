@@ -30,6 +30,9 @@ The `algorithms: ['geometric']` configuration also registers the required layere
 | `elk.geometric.startAngle` | `-1.5707963267948966` | Radians, with the first ring node or radial branch pointing upward by default. |
 | `elk.geometric.clockwise` | `true` | Orientation in screen coordinates. |
 | `elk.geometric.ring.anchorId` | empty | Node to place at the ring's start angle. Applies to the ring containing that node. |
+| `elk.edgeLabels.inline` | `false` | Center edge labels on their segment instead of beside it. Use this when the renderer draws the label over the edge, for example on a midpoint anchor. |
+| `elk.edgeLabels.placement` | `CENTER` | `TAIL` or `HEAD` prefer the source or target end of the route. |
+| `elk.spacing.edgeLabel`, `elk.spacing.labelNode`, `elk.spacing.labelLabel` | `2`, `5`, `0` | Distances kept between a label and its edge, other nodes, and other labels. |
 
 Core direction, padding, node spacing, edge spacing, node sizing, labels, and port constraints remain available. Effective node spacing may increase to leave a navigable edge corridor. Exact symmetry applies to matching subtree structures and footprints; unequal branches are centered by their visible envelopes.
 
@@ -43,7 +46,9 @@ For interactive ring layout, set `elk.interactive` to `'true'`, retain old node 
 
 ## Routing and failure behavior
 
-The geometric router emits polylines around fixed node, port, and label footprints. It uses a spatial index, a cached adaptive visibility graph, and deterministic path choices ordered by length, bends, and crossings. Fixed ports retain their coordinates. Cross-hierarchy routes use ancestor boundary waypoints and avoid descendant obstacles. Labels use suitable segments or dedicated exterior corridors when they need more room.
+The geometric router emits polylines around fixed node, port, and label footprints. It uses a spatial index, a cached adaptive visibility graph, and deterministic path choices ordered by length, bends, and crossings. Fixed ports retain their coordinates. Cross-hierarchy routes use ancestor boundary waypoints and avoid descendant obstacles, including routes and labels of nested scopes that are already laid out.
+
+Edge labels are part of the geometry. Placement reserves room for them: tree children move apart and levels spread by the label extents, and radial and ring placement grow to the smallest scale at which every label rectangle beside its edge clears nodes and other labels and the edge is long enough to carry it. Routing then places each label on the edge's own shortest route without changing it whenever a segment can hold the label, sliding along the segment and choosing the side with more room and fewer conflicts with edges still to be routed. Only when no segment fits does the edge take the smallest local detour that exposes a labeled segment, and only when no such detour exists an exterior corridor beyond the nearest side of the drawing. A placed label is an obstacle for edges routed later, never for its own edge. Labels return with `id`, `x`, `y`, `width`, and `height` relative to the edge's containing node, like the edge sections.
 
 Explicit spline or orthogonal routing, hyperedges, and excluded-node constraints use layered fallback. Enable `logging` to see the reason and the recognized modes. A fixed graph size that cannot accommodate the result raises an error; it does not silently clip the layout. The geometric provider commits its internal working graph only after every scope succeeds.
 
@@ -70,6 +75,8 @@ node scripts/geometric-quality.cjs artifacts/geometric /path/to/baseline-elk.bun
 ```
 
 Shared fixtures are in `../elk/test/geometry`. JVM tests export results to `../elk/test/org.eclipse.elk.alg.geometric.test/target/geometric-results`; the parity script compares node, port, label, and edge coordinates with the freshly built JS bundle, using `1e-6 × max(1, diagram size)` tolerance.
+
+The `*-labels.json` fixtures are checked by `test/mocha/testGeometricLabelQuality.js` in the bundle and in both workers: structure, fixed ports, finite deterministic coordinates, labels adjacent to their own edge, clear of nodes and other labels, and uncrossed by other edges. The symmetric tree, the six-leaf star, and the ring are compared with their unlabeled twins: labels add at most one bend per labeled edge and raise the per-edge detour factor by at most 1.5; the star keeps at most six bends. The detour factor is compared instead of raw length because reserved label room scales the drawing.
 
 The quality command writes a standalone `gallery.html`, `comparisons.json`, and `benchmark.json`. Each before/after pair uses the same input dimensions and display scale. Benchmarks cover tree, star, ring, chain, chorded ring, mixed regions, and nested scopes at 10, 100, and 1,000 leaf nodes. Five timed samples follow a warm-up. p50/p95 are descriptive sample quantiles; heap deltas include garbage-collection effects and are not peak memory. Stage timings come from ELK progress monitors. Area, edge length, and bend count are costs to inspect, not optimization targets that must always decrease.
 

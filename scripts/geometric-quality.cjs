@@ -86,8 +86,10 @@ async function main() {
   for(const name of fs.readdirSync(fixtureRoot).filter(n=>n.endsWith('.json')).sort()) {
     const input=JSON.parse(fs.readFileSync(path.join(fixtureRoot,name),'utf8'));
     const legacy=clone(input);
-    const oldAlgorithm=input.id.includes('tree')?'mrtree':input.id==='star'||input.id==='radial-asymmetric'?'radial':input.id==='ring'||input.id==='ring-unequal'?'stress':'layered';
-    legacy.layoutOptions['elk.algorithm']=oldAlgorithm;
+    // Label fixtures compare against the previous geometric build itself; the others against the legacy algorithm.
+    const labeled=input.id.endsWith('-labels');
+    const oldAlgorithm=labeled?'geometric (baseline bundle)':input.id.includes('tree')?'mrtree':input.id.startsWith('star')||input.id==='radial-asymmetric'?'radial':/^ring(-unequal)?$/.test(input.id)?'stress':'layered';
+    if(!labeled) legacy.layoutOptions['elk.algorithm']=oldAlgorithm;
     if(oldAlgorithm==='radial') legacy.layoutOptions['elk.radial.centerOnRoot']='true';
     const before=await baseline.layout(legacy);
     metrics.containment(before); // A comparison is invalid if the baseline omitted any edge routes.
