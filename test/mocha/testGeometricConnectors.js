@@ -127,6 +127,20 @@ describe('Geometric connectors', function () {
     assert.deepStrictEqual(metrics.geometry(await elk.layout(permuted)), reference);
   });
 
+  it('draws a polyline instead of failing when nodes are closer than twice the edge clearance', async () => {
+    const g = { id: 'close', layoutOptions: { 'elk.algorithm': 'geometric', 'elk.geometric.mode': 'TREE', 'elk.geometric.routing': 'ORTHOGONAL', 'elk.spacing.nodeNode': '10', 'elk.spacing.edgeNode': '8' }, children: [], edges: [] };
+    for (let i = 0; i < 6; i++) {
+      g.children.push({ id: 'n' + i, width: 40, height: 30 });
+      if (i) g.edges.push({ id: 'e' + i, sources: ['n' + (i - 1)], targets: ['n' + i] });
+      if (i && i % 2 === 0) g.edges.push({ id: 'x' + i, sources: ['n0'], targets: ['n' + i] });
+    }
+    const result = await elk.layout(g);
+    for (const e of result.edges) {
+      assert.strictEqual(e.sections.length, 1, `${e.id} routed`);
+      for (const p of points(e)) assert(Number.isFinite(p.x) && Number.isFinite(p.y), `${e.id} finite`);
+    }
+  });
+
   it('FIXED falls back to a direct connector when an endpoint is enclosed', async () => {
     const g = await elk.layout({ id: 'enclosed', layoutOptions: { 'elk.algorithm': 'geometric', 'elk.geometric.mode': 'FIXED' },
       children: [{ id: 'big', x: 0, y: 0, width: 200, height: 200 }, { id: 'inner', x: 90, y: 90, width: 20, height: 20 },
