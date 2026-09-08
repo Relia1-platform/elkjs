@@ -87,6 +87,46 @@ describe('Geometric connectors', function () {
     assert((g.edges.find(e => e.id === 'ab').sections[0].bendPoints || []).length >= 2, 'ab detours around c');
   });
 
+  for (const name of fs.readdirSync(fixtureDir).filter(n => n.includes('orthogonal')).sort()) {
+    it(`draws ${name.replace('.json', '')} with axis-aligned, separated, labeled connectors`, async () => {
+      const input = fixture(name.replace('.json', ''));
+      const g = await elk.layout(structuredClone(input));
+      metrics.containment(g); metrics.labels(g);
+      const { nodes, routes } = metrics.absolute(g);
+      const interior = [];
+      for (const route of Object.values(routes)) {
+        const p = route.points;
+        for (let i = 1; i < p.length; i++) {
+          assert(Math.abs(p[i].x - p[i - 1].x) < 1e-9 || Math.abs(p[i].y - p[i - 1].y) < 1e-9, `${route.id} segment ${i} is axis-aligned`);
+          for (const n of nodes) {
+            if (route.ancestors.has(n.id) || route.ends.has(n.id)) continue;
+            assert(!metrics.crosses(p[i - 1], p[i], n), `${route.id} crosses ${n.id}`);
+          }
+          if (i >= 2 && i <= p.length - 2) interior.push([route.id, p[i - 1], p[i]]);
+        }
+      }
+      for (let i = 0; i < interior.length; i++) for (let j = i + 1; j < interior.length; j++) {
+        if (interior[i][0] === interior[j][0]) continue;
+        const [, a, b] = interior[i], [, c, d] = interior[j];
+        const h1 = Math.abs(a.y - b.y) < 1e-9, h2 = Math.abs(c.y - d.y) < 1e-9;
+        if (h1 !== h2) continue;
+        const same = h1 ? Math.abs(a.y - c.y) < 1e-6 : Math.abs(a.x - c.x) < 1e-6;
+        const overlap = h1 ? Math.min(Math.max(a.x, b.x), Math.max(c.x, d.x)) - Math.max(Math.min(a.x, b.x), Math.min(c.x, d.x))
+          : Math.min(Math.max(a.y, b.y), Math.max(c.y, d.y)) - Math.max(Math.min(a.y, b.y), Math.min(c.y, d.y));
+        assert(!(same && overlap > 1e-6), `${interior[i][0]} and ${interior[j][0]} share a channel`);
+      }
+      assert.deepStrictEqual(metrics.geometry(await elk.layout(structuredClone(input))), metrics.geometry(g), 'determinism');
+    });
+  }
+
+  it('keeps orthogonal star routes invariant under STABLE_ID permutation', async () => {
+    const input = fixture('star-orthogonal-labels');
+    const reference = metrics.geometry(await elk.layout(structuredClone(input)));
+    const permuted = structuredClone(input);
+    permuted.children.reverse(); permuted.edges.reverse();
+    assert.deepStrictEqual(metrics.geometry(await elk.layout(permuted)), reference);
+  });
+
   it('FIXED falls back to a direct connector when an endpoint is enclosed', async () => {
     const g = await elk.layout({ id: 'enclosed', layoutOptions: { 'elk.algorithm': 'geometric', 'elk.geometric.mode': 'FIXED' },
       children: [{ id: 'big', x: 0, y: 0, width: 200, height: 200 }, { id: 'inner', x: 90, y: 90, width: 20, height: 20 },

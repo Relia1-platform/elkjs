@@ -115,11 +115,12 @@ function absolute(graph) {
       const points = [];
       for (const s of e.sections || []) for (const p of [s.startPoint, ...(s.bendPoints || []), s.endPoint]) points.push({ x: ox + p.x, y: oy + p.y });
       const labels = (e.labels || []).map(l => ({ id: l.id, x: ox + l.x, y: oy + l.y, width: l.width, height: l.height }));
-      const ancestors = new Set();
+      const ancestors = new Set(), ends = new Set();
       for (const end of [...e.sources, ...e.targets]) {
+        ends.add(owner[end] || end);
         for (let id = parent[owner[end] || end]; id; id = parent[id]) ancestors.add(id);
       }
-      routes[e.id] = { id: e.id, points, labels, ancestors };
+      routes[e.id] = { id: e.id, points, labels, ancestors, ends };
     }
     for (const n of g.children || []) walkEdges(n, ox + n.x, oy + n.y);
   })(graph, 0, 0);
