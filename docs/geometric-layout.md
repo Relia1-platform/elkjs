@@ -24,7 +24,8 @@ The `algorithms: ['geometric']` configuration also registers the required layere
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `elk.geometric.mode` | `AUTO` | `TREE`, `RADIAL`, `RING`, or `CLUSTER` can force the layout family. |
+| `elk.geometric.mode` | `AUTO` | `TREE`, `RADIAL`, `RING`, or `CLUSTER` can force the layout family. `FIXED` keeps the given node positions and only routes edges and places labels, for example after a user moved nodes. |
+| `elk.geometric.tree.routing` | `DIRECT` | `BUS` draws TREE components as org charts: one orthogonal bus per parent with drops into the children, junction points on the bus, labels on the drops. |
 | `elk.geometric.root` | `false` | Mark a node as the root of its component. Multiple roots in one component produce an error. |
 | `elk.geometric.order` | `MODEL_ORDER` | Use `STABLE_ID` for invariance to reordering the input node and edge arrays. IDs are ordered lexically. |
 | `elk.geometric.startAngle` | `-1.5707963267948966` | Radians, with the first ring node or radial branch pointing upward by default. |
@@ -47,6 +48,8 @@ For interactive ring layout, set `elk.interactive` to `'true'`, retain old node 
 ## Routing and failure behavior
 
 The geometric router emits polylines around fixed node, port, and label footprints. It uses a spatial index, a cached adaptive visibility graph, and deterministic path choices ordered by length, bends, and crossings. Fixed ports retain their coordinates. Cross-hierarchy routes use ancestor boundary waypoints and avoid descendant obstacles, including routes and labels of nested scopes that are already laid out.
+
+With `elk.geometric.tree.routing: 'BUS'` a TREE component is drawn as an org chart. Every parent leaves the center of the side facing its children, one bus runs halfway through the level gap, and each child is entered through a perpendicular drop; siblings share the bus, and each bus edge carries `junctionPoints` where its drop leaves the bus so that a renderer can draw the branch. A child almost under its parent gets a straight drop. Cross-links, parallel duplicates and edges through ports keep the general router. With `elk.geometric.mode: 'FIXED'` node positions are kept, up to the uniform translation that establishes the padding, and only edges and labels are computed; edges that cannot be routed around the given footprints fall back to their direct segment.
 
 Edge labels are part of the geometry. Placement reserves room for them: tree children move apart and levels spread by the label extents, and radial and ring placement grow to the smallest scale at which every label rectangle beside its edge clears nodes and other labels and the edge is long enough to carry it. Routing then places each label on the edge's own shortest route without changing it whenever a segment can hold the label, sliding along the segment and choosing the side with more room and fewer conflicts with edges still to be routed. Only when no segment fits does the edge take the smallest local detour that exposes a labeled segment, and only when no such detour exists an exterior corridor beyond the nearest side of the drawing. A placed label is an obstacle for edges routed later, never for its own edge. Labels return with `id`, `x`, `y`, `width`, and `height` relative to the edge's containing node, like the edge sections.
 
