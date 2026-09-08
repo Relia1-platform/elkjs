@@ -47,7 +47,7 @@ In `AUTO`, explicit roots select radial layout; pure trees select tree layout (s
 
 Mixed layout uses iterative biconnected-component analysis. A block qualifies as a ring when a deterministic fundamental cycle covers all its nodes and its chord count is at most `max(1, floor(n / 4))`. This is a bounded heuristic, not an exhaustive Hamiltonian-cycle search. Hanging trees occupy outward sectors. Generic blocks use layered BK `BALANCED`, followed by uniform expansion if required for clearance. Regions are composed by translation, with no temporary clusters added to the output hierarchy.
 
-For interactive ring layout, set `elk.interactive` to `'true'`, retain old node coordinates, and omit `elk.geometric.startAngle`. Rotation is fitted to positioned nodes; a newly added JSON node with no coordinates does not bias the fit. An explicit start angle locks rotation.
+For a stable relayout, set `elk.interactive` to `'true'` and pass the old node coordinates. Tree siblings then keep their previous order across the tree axis, radial children keep their previous angular order around the root, a ring keeps its orientation and has its rotation fitted to the positioned nodes, and a root tie goes to the node nearest the previous centroid. A newly added node without coordinates is appended after its positioned siblings and does not bias the ring fit. An unchanged graph reproduces its drawing exactly. Omit `elk.geometric.startAngle` for the ring fit; an explicit start angle locks rotation.
 
 ## Routing and failure behavior
 
